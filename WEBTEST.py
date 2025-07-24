@@ -7,7 +7,7 @@ from PIL import Image
 # Load the model once
 @st.cache_resource
 def load_my_model():
-    model_path = "C:\\Users\\HP\\Documents\\Jason\\python\\best_model_final_attempt.keras"
+    model_path = "best_model_final_attempt.keras"  # Path relative to app directory
     return load_model(model_path)
 
 model = load_my_model()
@@ -45,10 +45,8 @@ if uploaded_file is not None:
 
     # Classify as AI or Human
     if 'AI' in predicted_class:
-        output_text = "AI"
         st.success("🤖 This artwork was **made by AI**.")
     else:
-        output_text = "Human"
         st.info("🎨 This artwork was **made by a Human**.")
 
     # Show exact class
