@@ -78,20 +78,6 @@ def add_custom_css():
         border-top: 5px solid #4ecdc4;
     }
     
-    .confidence-bar {
-        height: 10px;
-        background-color: #e0e0e0;
-        border-radius: 5px;
-        margin: 1rem 0;
-        overflow: hidden;
-    }
-    
-    .confidence-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #667eea, #764ba2);
-        border-radius: 5px;
-    }
-    
     .footer {
         text-align: center;
         margin-top: 3rem;
@@ -143,9 +129,6 @@ class_names = [
     'AI_SD_ukiyo-e', 'art_nouveau', 'baroque', 'expressionism', 'impressionism', 
     'post_impressionism', 'realism', 'renaissance', 'romanticism', 'surrealism', 'ukiyo_e'
 ]
-
-AI_CLASSES = [name for name in class_names if name.startswith("AI_")]
-HUMAN_CLASSES = [name for name in class_names if not name.startswith("AI_")]
 
 # Main app
 def main():
@@ -207,28 +190,30 @@ def main():
             
             # Predict
             model = load_my_model()
-            pred_probs = model.predict(img_expanded)[0]
-            predicted_class_index = np.argmax(pred_probs)
-            predicted_class = class_names[predicted_class_index]
-            confidence = pred_probs[predicted_class_index] * 100
+            new_model = model.predict(img_expanded)[0]  # This is the probability vector
             
-            # Determine if AI or Human based on class list membership
-            is_ai = predicted_class in AI_CLASSES
+            # Original classification logic
+            predicted_class = class_names[np.argmax(new_model)]
+            
+            # Check if predicted class contains 'AI' to decide the label to print
+            if 'AI' in predicted_class:
+                output_text = "made by ai"
+                result_emoji = "🤖"
+                result_text = "**AI Generated Artwork**"
+                result_class = "ai-result"
+                result_color = "#ff6b6b"
+            else:
+                output_text = "made by human"
+                result_emoji = "🎨"
+                result_text = "**Human Created Artwork**"
+                result_class = "human-result"
+                result_color = "#4ecdc4"
             
             # Display results
-            result_class = "ai-result" if is_ai else "human-result"
-            result_emoji = "🤖" if is_ai else "🎨"
-            result_text = "**AI Generated Artwork**" if is_ai else "**Human Created Artwork**"
-            result_color = "#ff6b6b" if is_ai else "#4ecdc4"
-            
             st.markdown(f"""
             <div class="result-card {result_class}">
                 <h2>{result_emoji} Classification Result</h2>
                 <div class="prediction-text" style="color: {result_color};">{result_text}</div>
-                <p>Confidence: <strong>{confidence:.1f}%</strong></p>
-                <div class="confidence-bar">
-                    <div class="confidence-fill" style="width: {confidence}%"></div>
-                </div>
                 <p><small>Predicted Style: <code>{predicted_class}</code></small></p>
             </div>
             """, unsafe_allow_html=True)
@@ -238,16 +223,15 @@ def main():
                 st.markdown(f"""
                 <div class="debug-info">
                     <p><strong>Predicted Class:</strong> {predicted_class}</p>
-                    <p><strong>Is AI Generated:</strong> {is_ai}</p>
-                    <p><strong>Confidence Score:</strong> {confidence:.2f}%</p>
+                    <p><strong>Result:</strong> {output_text}</p>
                     <p><strong>Top 3 Predictions:</strong></p>
                     <ul>
                 """, unsafe_allow_html=True)
                 
                 # Show top 3 predictions
-                top_3_indices = np.argsort(pred_probs)[-3:][::-1]
+                top_3_indices = np.argsort(new_model)[-3:][::-1]
                 for i, idx in enumerate(top_3_indices):
-                    st.markdown(f"<li>{class_names[idx]}: {(pred_probs[idx]*100):.1f}%</li>", unsafe_allow_html=True)
+                    st.markdown(f"<li>{class_names[idx]}: {(new_model[idx]*100):.1f}%</li>", unsafe_allow_html=True)
                 
                 st.markdown("</ul></div>", unsafe_allow_html=True)
     
