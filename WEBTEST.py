@@ -104,6 +104,15 @@ def add_custom_css():
         font-weight: 600;
         margin: 1rem 0;
     }
+    
+    .debug-info {
+        background-color: #f8f9fa;
+        border-left: 4px solid #ffc107;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+        font-size: 0.9rem;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -123,6 +132,11 @@ def add_background():
 def load_my_model():
     model_path = "best_model_final_attempt.keras"
     return load_model(model_path)
+
+# Function to check if prediction is AI-generated
+def is_ai_generated(class_name):
+    """Determine if the predicted class is AI-generated"""
+    return 'AI_' in class_name.upper()
 
 # Main app
 def main():
@@ -188,8 +202,8 @@ def main():
             predicted_class = class_names[np.argmax(pred_probs)]
             confidence = np.max(pred_probs) * 100
             
-            # Determine result type
-            is_ai = 'AI' in predicted_class
+            # Determine result type - FIXED LOGIC
+            is_ai = is_ai_generated(predicted_class)
             
             # Display results
             result_class = "ai-result" if is_ai else "human-result"
@@ -208,6 +222,24 @@ def main():
                 <p><small>Predicted Style: <code>{predicted_class}</code></small></p>
             </div>
             """, unsafe_allow_html=True)
+            
+            # Debug information
+            with st.expander("🔍 Debug Information"):
+                st.markdown(f"""
+                <div class="debug-info">
+                    <p><strong>Predicted Class:</strong> {predicted_class}</p>
+                    <p><strong>Is AI Generated:</strong> {is_ai}</p>
+                    <p><strong>Confidence Score:</strong> {confidence:.2f}%</p>
+                    <p><strong>Top 3 Predictions:</strong></p>
+                    <ul>
+                """, unsafe_allow_html=True)
+                
+                # Show top 3 predictions
+                top_3_indices = np.argsort(pred_probs)[-3:][::-1]
+                for i, idx in enumerate(top_3_indices):
+                    st.markdown(f"<li>{class_names[idx]}: {(pred_probs[idx]*100):.1f}%</li>", unsafe_allow_html=True)
+                
+                st.markdown("</ul></div>", unsafe_allow_html=True)
     
     # Footer
     st.markdown("""
@@ -229,56 +261,3 @@ class_names = [
 
 if __name__ == "__main__":
     main()
-# import streamlit as st
-# import numpy as np
-# import tensorflow as tf
-# from tensorflow.keras.models import load_model
-# from PIL import Image
-
-# # Load the model once
-# @st.cache_resource
-# def load_my_model():
-#     model_path = "best_model_final_attempt.keras"  # Path relative to app directory
-#     return load_model(model_path)
-
-# model = load_my_model()
-
-# # Define class names
-# class_names = [
-#     'AI_LD_art_nouveau', 'AI_LD_baroque', 'AI_LD_expressionism', 'AI_LD_impressionism', 
-#     'AI_LD_post_impressionism', 'AI_LD_realism', 'AI_LD_renaissance', 'AI_LD_romanticism',
-#     'AI_LD_surrealism', 'AI_LD_ukiyo-e', 'AI_SD_art_nouveau', 'AI_SD_baroque', 
-#     'AI_SD_expressionism', 'AI_SD_impressionism', 'AI_SD_post_impressionism', 
-#     'AI_SD_realism', 'AI_SD_renaissance', 'AI_SD_romanticism', 'AI_SD_surrealism', 
-#     'AI_SD_ukiyo-e', 'art_nouveau', 'baroque', 'expressionism', 'impressionism', 
-#     'post_impressionism', 'realism', 'renaissance', 'romanticism', 'surrealism', 'ukiyo_e'
-# ]
-
-# # Streamlit UI
-# st.title("🎨 AI vs Human Art Classifier")
-# st.write("Upload an image of a painting to classify whether it was **made by AI or a human artist**.")
-
-# uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-
-# if uploaded_file is not None:
-#     # Display the uploaded image
-#     image = Image.open(uploaded_file).convert("RGB")
-#     st.image(image, caption="🖼️ Uploaded Image", use_column_width=True)
-
-#     # Preprocess image
-#     img_resized = image.resize((224, 224))
-#     img_array = np.array(img_resized) / 255.0
-#     img_expanded = np.expand_dims(img_array, axis=0)
-
-#     # Predict
-#     pred_probs = model.predict(img_expanded)[0]
-#     predicted_class = class_names[np.argmax(pred_probs)]
-
-#     # Classify as AI or Human
-#     if 'AI' in predicted_class:
-#         st.success("🤖 This artwork was **made by AI**.")
-#     else:
-#         st.info("🎨 This artwork was **made by a Human**.")
-
-#     # Show exact class
-#     st.write(f"**Predicted style class:** `{predicted_class}`")
