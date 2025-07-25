@@ -114,10 +114,12 @@ def add_background():
     """, unsafe_allow_html=True)
 
 # Load the model once
+
 @st.cache_resource
 def load_my_model():
-    model_path = "best_model_final_attempt.keras"
+    model_path = "best_model_final_attempt - Copy.keras"
     return load_model(model_path)
+
 
 # Define class names and categories
 class_names = [
